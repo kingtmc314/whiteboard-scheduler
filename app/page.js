@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
-import { layout, occupancy, dateList, purposeColors, equipment } from "../lib/data";
+import { layout, occupancy, dateList, purposeColors, equipment, manualReservations } from "../lib/data";
 
 const floors = ["7/F", "6/F", "5/F", "4/F", "3/F", "2/F", "1/F", "G/F"];
 const cols = Array.from({ length: 11 }, (_, i) => i + 1);
@@ -17,19 +17,24 @@ export default function Home() {
   const occ = day.rooms;
 
   // Helper to check if a room should be BLOCKED (Reserved)
-  const isReserved = (floor, date) => {
+  const isReserved = (floor, code, date) => {
+    // 1. 手動保留 (Manual Reservations)
+    if (manualReservations[date]?.includes(code)) return true;
+
+    // 2. 樓層全域保留 (Floor-wide Reservations)
     const d = parseInt(date.split("-")[2]);
     if (floor === "7/F" && d >= 20 && d <= 22) return true;
     if (floor === "3/F" && d >= 20 && d <= 23) return true;
     if (floor === "2/F" && d >= 20 && d <= 24) return true;
     if (floor === "6/F" && d >= 20 && d <= 30) return true;
+    
     return false;
   };
 
   const processedRooms = useMemo(() => {
     return allRooms.map(r => {
       const use = occ[r.code];
-      const reserved = !use && isReserved(r.floor, dateKey);
+      const reserved = !use && isReserved(r.floor, r.code, dateKey);
       return { ...r, use, reserved };
     });
   }, [dateKey, occ]);
@@ -43,7 +48,7 @@ export default function Home() {
     dateList.forEach((d) => {
       Object.keys(occupancy[d].rooms).forEach((c) => usedEver.add(c));
       allRooms.forEach(r => {
-        if (isReserved(r.floor, d)) usedEver.add(r.code);
+        if (isReserved(r.floor, r.code, d)) usedEver.add(r.code);
       });
     });
     const codes = new Set();
@@ -93,7 +98,7 @@ export default function Home() {
                 onClick={() => { setDateKey(d); setSel(null); }}
               >
                 {occupancy[d].label}
-                <span>{Object.keys(occupancy[d].rooms).length + allRooms.filter(r => isReserved(r.floor, d) && !occupancy[d].rooms[r.code]).length} 間須避開</span>
+                <span>{Object.keys(occupancy[d].rooms).length + allRooms.filter(r => isReserved(r.floor, r.code, d) && !occupancy[d].rooms[r.code]).length} 間須避開</span>
               </button>
             ))}
           </div>
@@ -172,7 +177,7 @@ export default function Home() {
                       <p className="warn">⚠ 此日已被佔用，請勿施工</p>
                     </>
                   ) : sel.reserved ? (
-                    <p className="warn">⚠ 此樓層於此段時間已被保留，請勿施工</p>
+                    <p className="warn">⚠ 此課室/樓層於此段時間已被保留，請勿施工</p>
                   ) : (
                     <p className="okmsg">
                       {sel.isAlwaysFree ? "★ 全期空置，建議優先施工" : "✓ 此日空置，可安排施工"}
@@ -285,7 +290,7 @@ export default function Home() {
                 {allRooms.filter(r => selectedFloor === "All Floors" || r.floor === selectedFloor).map(r => {
                   const info = equipment[r.code] || { wb: 0, pa: 0, socket: 0, remark: "" };
                   const use = occ[r.code];
-                  const reserved = !use && isReserved(r.floor, dateKey);
+                  const reserved = !use && isReserved(r.floor, r.code, dateKey);
                   const isAlwaysFree = alwaysFreeCodes.has(r.code);
                   
                   let statusText = "可施工 ✓";
