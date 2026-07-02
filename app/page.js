@@ -33,6 +33,7 @@ export default function Home() {
   const processedRooms = useMemo(() => {
     return allRooms.map(r => {
       const use = occ[r.code];
+      // If there is an actual use record, it's NOT "reserved" (actual use takes priority)
       const reserved = !use && isReserved(r.floor, dateKey);
       return { ...r, use, reserved };
     });
