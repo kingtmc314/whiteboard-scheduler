@@ -8,6 +8,9 @@ const allRooms = Object.entries(layout).flatMap(([f, arr]) =>
   arr.map((r) => ({ ...r, floor: f }))
 );
 
+// Specific rooms to label as "可施工 ✓" instead of "優先施工 ★"
+const forceCanBuildLabels = new Set(["S301", "S305", "S209", "S211", "S702", "S709"]);
+
 export default function Home() {
   const [dateKey, setDateKey] = useState(dateList[0]);
   const [sel, setSel] = useState(null);
@@ -84,12 +87,14 @@ export default function Home() {
                 else if (isAlwaysFree) cellClass += "free always-free";
                 else cellClass += "free";
 
+                const showPriorityLabel = isAlwaysFree && !forceCanBuildLabels.has(room.code);
+
                 return (
                   <div
                     key={c}
                     className={cellClass}
                     style={use ? { background: bg } : {}}
-                    onClick={() => setSel({ ...room, use, isAlwaysFree })}
+                    onClick={() => setSel({ ...room, use, isAlwaysFree, showPriorityLabel })}
                     title={room.code}
                   >
                     <div className="rname">{room.name}</div>
@@ -97,7 +102,7 @@ export default function Home() {
                     {use ? (
                       <div className="rinfo">{use.t}<br/>{use.p}</div>
                     ) : (
-                      <div className="rok">{isAlwaysFree ? "優先施工 ★" : "可施工 ✓"}</div>
+                      <div className="rok">{showPriorityLabel ? "優先施工 ★" : "可施工 ✓"}</div>
                     )}
                   </div>
                 );
@@ -129,7 +134,7 @@ export default function Home() {
                 </>
               ) : (
                 <p className="okmsg">
-                  {sel.isAlwaysFree ? "★ 全期空置，建議優先施工" : "✓ 此日空置，可安排施工"}
+                  {sel.showPriorityLabel ? "★ 全期空置，建議優先施工" : "✓ 此日空置，可安排施工"}
                 </p>
               )}
             </div>
@@ -140,7 +145,7 @@ export default function Home() {
             {freeRooms.map((r) => (
               <li key={r.code}>
                 {r.floor}｜{r.name}
-                {alwaysFreeCodes.has(r.code) && <b style={{color:'#22c55e', marginLeft:'4px'}}>★</b>}
+                {alwaysFreeCodes.has(r.code) && !forceCanBuildLabels.has(r.code) && <b style={{color:'#22c55e', marginLeft:'4px'}}>★</b>}
                 <span>{r.code}</span>
               </li>
             ))}
