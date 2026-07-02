@@ -18,13 +18,19 @@ export default function Home() {
   const occRooms = allRooms.filter((r) => occ[r.code]);
 
   // 全期都沒被使用的課室（隨時可施工）
-  const alwaysFree = useMemo(() => {
+  const alwaysFreeCodes = useMemo(() => {
     const usedEver = new Set();
     dateList.forEach((d) =>
       Object.keys(occupancy[d].rooms).forEach((c) => usedEver.add(c))
     );
-    return allRooms.filter((r) => !usedEver.has(r.code));
+    const codes = new Set();
+    allRooms.forEach(r => {
+      if (!usedEver.has(r.code)) codes.add(r.code);
+    });
+    return codes;
   }, []);
+
+  const alwaysFreeRooms = allRooms.filter(r => alwaysFreeCodes.has(r.code));
 
   return (
     <main>
@@ -51,7 +57,7 @@ export default function Home() {
       <div className="stats">
         <div className="stat s-used"><b>{occRooms.length}</b>被使用課室</div>
         <div className="stat s-free"><b>{freeRooms.length}</b>可施工課室</div>
-        <div className="stat s-any"><b>{alwaysFree.length}</b>全期隨時可施工</div>
+        <div className="stat s-any"><b>{alwaysFreeRooms.length}</b>全期隨時可施工</div>
       </div>
 
       <div className="wrap">
@@ -70,13 +76,20 @@ export default function Home() {
                 const room = (layout[f] || []).find((r) => r.col === c);
                 if (!room) return <div key={c} className="cell empty" />;
                 const use = occ[room.code];
+                const isAlwaysFree = alwaysFreeCodes.has(room.code);
                 const bg = use ? purposeColors[use.p] || "#ef4444" : null;
+                
+                let cellClass = "cell ";
+                if (use) cellClass += "used";
+                else if (isAlwaysFree) cellClass += "free always-free";
+                else cellClass += "free";
+
                 return (
                   <div
                     key={c}
-                    className={"cell " + (use ? "used" : "free")}
+                    className={cellClass}
                     style={use ? { background: bg } : {}}
-                    onClick={() => setSel({ ...room, use })}
+                    onClick={() => setSel({ ...room, use, isAlwaysFree })}
                     title={room.code}
                   >
                     <div className="rname">{room.name}</div>
@@ -84,7 +97,7 @@ export default function Home() {
                     {use ? (
                       <div className="rinfo">{use.t}<br/>{use.p}</div>
                     ) : (
-                      <div className="rok">可施工 ✓</div>
+                      <div className="rok">{isAlwaysFree ? "優先施工 ★" : "可施工 ✓"}</div>
                     )}
                   </div>
                 );
@@ -94,7 +107,8 @@ export default function Home() {
 
           {/* 圖例 */}
           <div className="legend">
-            <span className="lg" style={{ background: "#dcfce7", color:"#166534" }}>空置 / 可施工</span>
+            <span className="lg" style={{ background: "#dcfce7", color:"#166534", border: "1px solid #86efac" }}>空置 / 可施工</span>
+            <span className="lg" style={{ background: "#bbf7d0", color:"#166534", border: "2px solid #22c55e", fontWeight: "bold" }}>★ 優先 / 全期空置</span>
             {Object.entries(purposeColors).map(([p, c]) => (
               <span key={p} className="lg" style={{ background: c }}>{p}</span>
             ))}
@@ -114,7 +128,9 @@ export default function Home() {
                   <p className="warn">⚠ 此日請勿施工</p>
                 </>
               ) : (
-                <p className="okmsg">✓ 此日空置，可安排施工</p>
+                <p className="okmsg">
+                  {sel.isAlwaysFree ? "★ 全期空置，建議優先施工" : "✓ 此日空置，可安排施工"}
+                </p>
               )}
             </div>
           )}
@@ -122,13 +138,17 @@ export default function Home() {
           <h3>本日可施工課室（{freeRooms.length}）</h3>
           <ul className="list free-list">
             {freeRooms.map((r) => (
-              <li key={r.code}>{r.floor}｜{r.name}<span>{r.code}</span></li>
+              <li key={r.code}>
+                {r.floor}｜{r.name}
+                {alwaysFreeCodes.has(r.code) && <b style={{color:'#22c55e', marginLeft:'4px'}}>★</b>}
+                <span>{r.code}</span>
+              </li>
             ))}
           </ul>
 
-          <h3>全期隨時可施工（{alwaysFree.length}）</h3>
+          <h3>全期隨時可施工（{alwaysFreeRooms.length}）</h3>
           <ul className="list any-list">
-            {alwaysFree.map((r) => (
+            {alwaysFreeRooms.map((r) => (
               <li key={r.code}>{r.floor}｜{r.name}<span>{r.code}</span></li>
             ))}
           </ul>
