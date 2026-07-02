@@ -8,24 +8,50 @@ const allRooms = Object.entries(layout).flatMap(([f, arr]) =>
   arr.map((r) => ({ ...r, floor: f }))
 );
 
-// Specific rooms to label as "可施工 ✓" instead of "優先施工 ★"
-const forceCanBuildLabels = new Set(["S301", "S305", "S209", "S211", "S702", "S709"]);
-
 export default function Home() {
   const [dateKey, setDateKey] = useState(dateList[0]);
   const [sel, setSel] = useState(null);
   const day = occupancy[dateKey];
   const occ = day.rooms;
 
-  const freeRooms = allRooms.filter((r) => !occ[r.code]);
-  const occRooms = allRooms.filter((r) => occ[r.code]);
+  // Helper to check if a room should be BLOCKED (Reserved)
+  const isReserved = (floor, date) => {
+    const d = parseInt(date.split("-")[2]); // Extract day from YYYY-MM-DD
+    
+    // 1. 20/7-22/7 7樓
+    if (floor === "7/F" && d >= 20 && d <= 22) return true;
+    // 2. 20/7-23/7 3樓
+    if (floor === "3/F" && d >= 20 && d <= 23) return true;
+    // 3. 20/7-24/7 2樓
+    if (floor === "2/F" && d >= 20 && d <= 24) return true;
+    // 4. 20/7-30/7 6樓
+    if (floor === "6/F" && d >= 20 && d <= 30) return true;
+    
+    return false;
+  };
+
+  const processedRooms = useMemo(() => {
+    return allRooms.map(r => {
+      const use = occ[r.code];
+      const reserved = !use && isReserved(r.floor, dateKey);
+      return { ...r, use, reserved };
+    });
+  }, [dateKey, occ]);
+
+  const freeRooms = processedRooms.filter((r) => !r.use && !r.reserved);
+  const occRooms = processedRooms.filter((r) => r.use);
+  const reservedRooms = processedRooms.filter((r) => r.reserved);
 
   // 全期都沒被使用的課室（隨時可施工）
   const alwaysFreeCodes = useMemo(() => {
     const usedEver = new Set();
-    dateList.forEach((d) =>
-      Object.keys(occupancy[d].rooms).forEach((c) => usedEver.add(c))
-    );
+    dateList.forEach((d) => {
+      // Both actual occupancy and reservations count as "used" for the "Always Free" calculation
+      Object.keys(occupancy[d].rooms).forEach((c) => usedEver.add(c));
+      allRooms.forEach(r => {
+        if (isReserved(r.floor, d)) usedEver.add(r.code);
+      });
+    });
     const codes = new Set();
     allRooms.forEach(r => {
       if (!usedEver.has(r.code)) codes.add(r.code);
@@ -39,7 +65,7 @@ export default function Home() {
     <main>
       <header className="top">
         <h1>電子白板施工避開日子｜2025-2026 中學</h1>
-        <p>綠色 = 空置（可施工）　彩色 = 已被使用（須避開）</p>
+        <p>綠色 = 空置（可施工）　灰色 = 保留（不可施工）　彩色 = 已被使用（須避開）</p>
       </header>
 
       {/* 日期選擇 */}
@@ -51,15 +77,16 @@ export default function Home() {
             onClick={() => { setDateKey(d); setSel(null); }}
           >
             {occupancy[d].label}
-            <span>{Object.keys(occupancy[d].rooms).length} 間被用</span>
+            <span>{Object.keys(occupancy[d].rooms).length + allRooms.filter(r => isReserved(r.floor, d) && !occupancy[d].rooms[r.code]).length} 間須避開</span>
           </button>
         ))}
       </div>
 
       {/* 統計 */}
       <div className="stats">
-        <div className="stat s-used"><b>{occRooms.length}</b>被使用課室</div>
-        <div className="stat s-free"><b>{freeRooms.length}</b>可施工課室</div>
+        <div className="stat s-used"><b>{occRooms.length}</b>已被使用</div>
+        <div className="stat s-reserved"><b>{reservedRooms.length}</b>保留中</div>
+        <div className="stat s-free"><b>{freeRooms.length}</b>本日可施工</div>
         <div className="stat s-any"><b>{alwaysFreeRooms.length}</b>全期隨時可施工</div>
       </div>
 
@@ -76,33 +103,34 @@ export default function Home() {
             <div key={f} className="frow">
               <div className="flabel">{f}</div>
               {cols.map((c) => {
-                const room = (layout[f] || []).find((r) => r.col === c);
+                const room = processedRooms.find((r) => r.floor === f && r.col === c);
                 if (!room) return <div key={c} className="cell empty" />;
-                const use = occ[room.code];
+                
                 const isAlwaysFree = alwaysFreeCodes.has(room.code);
-                const bg = use ? purposeColors[use.p] || "#ef4444" : null;
+                const bg = room.use ? purposeColors[room.use.p] || "#ef4444" : null;
                 
                 let cellClass = "cell ";
-                if (use) cellClass += "used";
+                if (room.use) cellClass += "used";
+                else if (room.reserved) cellClass += "reserved";
                 else if (isAlwaysFree) cellClass += "free always-free";
                 else cellClass += "free";
-
-                const showPriorityLabel = isAlwaysFree && !forceCanBuildLabels.has(room.code);
 
                 return (
                   <div
                     key={c}
                     className={cellClass}
-                    style={use ? { background: bg } : {}}
-                    onClick={() => setSel({ ...room, use, isAlwaysFree, showPriorityLabel })}
+                    style={room.use ? { background: bg } : {}}
+                    onClick={() => setSel({ ...room, isAlwaysFree })}
                     title={room.code}
                   >
                     <div className="rname">{room.name}</div>
                     <div className="rcode">{room.code}</div>
-                    {use ? (
-                      <div className="rinfo">{use.t}<br/>{use.p}</div>
+                    {room.use ? (
+                      <div className="rinfo">{room.use.t}<br/>{room.use.p}</div>
+                    ) : room.reserved ? (
+                      <div className="rres">保留中 🔒</div>
                     ) : (
-                      <div className="rok">{showPriorityLabel ? "優先施工 ★" : "可施工 ✓"}</div>
+                      <div className="rok">{isAlwaysFree ? "優先施工 ★" : "可施工 ✓"}</div>
                     )}
                   </div>
                 );
@@ -112,8 +140,9 @@ export default function Home() {
 
           {/* 圖例 */}
           <div className="legend">
-            <span className="lg" style={{ background: "#dcfce7", color:"#166534", border: "1px solid #86efac" }}>空置 / 可施工</span>
-            <span className="lg" style={{ background: "#bbf7d0", color:"#166534", border: "2px solid #22c55e", fontWeight: "bold" }}>★ 優先 / 全期空置</span>
+            <span className="lg lg-free">空置 / 可施工</span>
+            <span className="lg lg-priority">★ 優先 / 全期空置</span>
+            <span className="lg lg-reserved">🔒 保留 (不可施工)</span>
             {Object.entries(purposeColors).map(([p, c]) => (
               <span key={p} className="lg" style={{ background: c }}>{p}</span>
             ))}
@@ -130,11 +159,13 @@ export default function Home() {
                 <>
                   <p><b>使用人：</b>{sel.use.t}</p>
                   <p><b>性質：</b>{sel.use.p}</p>
-                  <p className="warn">⚠ 此日請勿施工</p>
+                  <p className="warn">⚠ 此日已被佔用，請勿施工</p>
                 </>
+              ) : sel.reserved ? (
+                <p className="warn">⚠ 此樓層於此段時間已被保留，請勿施工</p>
               ) : (
                 <p className="okmsg">
-                  {sel.showPriorityLabel ? "★ 全期空置，建議優先施工" : "✓ 此日空置，可安排施工"}
+                  {sel.isAlwaysFree ? "★ 全期空置，建議優先施工" : "✓ 此日空置，可安排施工"}
                 </p>
               )}
             </div>
@@ -145,7 +176,7 @@ export default function Home() {
             {freeRooms.map((r) => (
               <li key={r.code}>
                 {r.floor}｜{r.name}
-                {alwaysFreeCodes.has(r.code) && !forceCanBuildLabels.has(r.code) && <b style={{color:'#22c55e', marginLeft:'4px'}}>★</b>}
+                {alwaysFreeCodes.has(r.code) && <b style={{color:'#059669', marginLeft:'4px'}}>★</b>}
                 <span>{r.code}</span>
               </li>
             ))}
