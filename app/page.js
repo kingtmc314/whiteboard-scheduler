@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { layout, occupancy, dateList, purposeColors } from "../lib/data";
 
 const floors = ["7/F", "6/F", "5/F", "4/F", "3/F", "2/F", "1/F", "G/F"];
-const cols = Array.from({ length: 13 }, (_, i) => i + 1);
+const cols = Array.from({ length: 11 }, (_, i) => i + 1);
 const allRooms = Object.entries(layout).flatMap(([f, arr]) =>
   arr.map((r) => ({ ...r, floor: f }))
 );
