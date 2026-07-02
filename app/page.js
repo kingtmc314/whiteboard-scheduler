@@ -9,7 +9,7 @@ const allRooms = Object.entries(layout).flatMap(([f, arr]) =>
 );
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState("schedule"); // "schedule" or "equipment"
+  const [activeTab, setActiveTab] = useState("schedule"); // "schedule", "equipment", or "summary"
   const [dateKey, setDateKey] = useState(dateList[0]);
   const [sel, setSel] = useState(null);
   const [selectedFloor, setSelectedFloor] = useState("All Floors");
@@ -72,10 +72,16 @@ export default function Home() {
           >
             課室設備清單
           </button>
+          <button 
+            className={activeTab === "summary" ? "tab active" : "tab"} 
+            onClick={() => setActiveTab("summary")}
+          >
+            總表 (合併資訊)
+          </button>
         </div>
       </header>
 
-      {activeTab === "schedule" ? (
+      {activeTab === "schedule" && (
         <>
           <p className="sub-hint">綠色 = 空置（可施工）　灰色 = 保留（不可施工）　彩色 = 已被使用（須避開）</p>
           
@@ -187,7 +193,9 @@ export default function Home() {
             </aside>
           </div>
         </>
-      ) : (
+      )}
+
+      {activeTab === "equipment" && (
         <div className="equipment-view">
           <div className="equip-header">
             <p className="sub-hint">1 = 需要安裝 / 0 = 不需要安裝</p>
@@ -237,6 +245,77 @@ export default function Home() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "summary" && (
+        <div className="summary-view">
+          <div className="equip-header">
+            <div className="date-select">
+              <label>選擇日期：</label>
+              <select value={dateKey} onChange={(e) => setDateKey(e.target.value)}>
+                {dateList.map(d => <option key={d} value={d}>{occupancy[d].label}</option>)}
+              </select>
+            </div>
+            <div className="floor-filter">
+              <label>選擇樓層：</label>
+              <select value={selectedFloor} onChange={(e) => setSelectedFloor(e.target.value)}>
+                <option value="All Floors">所有樓層</option>
+                {floors.map(f => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="table-wrap">
+            <table className="sum-table">
+              <thead>
+                <tr>
+                  <th>樓層</th>
+                  <th>房號</th>
+                  <th>名稱</th>
+                  <th>本日狀態</th>
+                  <th>電子白板</th>
+                  <th>音響 PA</th>
+                  <th>電制插座</th>
+                  <th>備註</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allRooms.filter(r => selectedFloor === "All Floors" || r.floor === selectedFloor).map(r => {
+                  const info = equipment[r.code] || { wb: 0, pa: 0, socket: 0, remark: "" };
+                  const use = occ[r.code];
+                  const reserved = !use && isReserved(r.floor, dateKey);
+                  const isAlwaysFree = alwaysFreeCodes.has(r.code);
+                  
+                  let statusText = "可施工 ✓";
+                  let statusClass = "s-free";
+                  if (use) {
+                    statusText = `${use.t} (${use.p})`;
+                    statusClass = "s-used";
+                  } else if (reserved) {
+                    statusText = "保留中 🔒";
+                    statusClass = "s-reserved";
+                  } else if (isAlwaysFree) {
+                    statusText = "優先施工 ★";
+                    statusClass = "s-priority";
+                  }
+
+                  return (
+                    <tr key={r.code}>
+                      <td>{r.floor}</td>
+                      <td><b>{r.code}</b></td>
+                      <td>{r.name}</td>
+                      <td className={statusClass}>{statusText}</td>
+                      <td className={info.wb === 1 ? "t-need" : "t-none"}>{info.wb === 1 ? "需要" : "不需"}</td>
+                      <td className={info.pa === 1 ? "t-need" : "t-none"}>{info.pa === 1 ? "需要" : "不需"}</td>
+                      <td className={info.socket === 1 ? "t-need" : "t-none"}>{info.socket === 1 ? "需要" : "不需"}</td>
+                      <td className="t-remark">{info.remark}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

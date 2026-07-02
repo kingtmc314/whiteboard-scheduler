@@ -242,3 +242,63 @@ footer { margin-top:20px; text-align:center; color:#94a3b8; font-size:13px; padd
     gap: 15px;
   }
 }
+
+/* Summary View Styles */
+.summary-view .equip-header {
+  gap: 20px;
+}
+
+.date-select select, .floor-filter select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 14px;
+}
+
+.table-wrap {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  margin-bottom: 30px;
+}
+
+.sum-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  text-align: left;
+}
+
+.sum-table th {
+  background: #1e293b;
+  color: white;
+  padding: 12px 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sum-table td {
+  padding: 10px 15px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #475569;
+}
+
+.sum-table tr:hover {
+  background: #f8fafc;
+}
+
+.sum-table .s-free { color: #059669; font-weight: 600; }
+.sum-table .s-priority { color: #059669; font-weight: 800; }
+.sum-table .s-used { color: #ef4444; font-weight: 600; }
+.sum-table .s-reserved { color: #94a3b8; font-weight: 600; }
+
+.t-need { color: #059669; font-weight: 600; }
+.t-none { color: #94a3b8; }
+.t-remark { font-size: 12px; color: #ef4444; font-style: italic; }
+
+@media (max-width: 1024px) {
+  .table-wrap { overflow-x: auto; }
+  .sum-table { min-width: 800px; }
+}
