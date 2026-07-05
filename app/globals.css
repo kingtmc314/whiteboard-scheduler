@@ -302,3 +302,51 @@ footer { margin-top:20px; text-align:center; color:#94a3b8; font-size:13px; padd
   .table-wrap { overflow-x: auto; }
   .sum-table { min-width: 800px; }
 }
+
+/* Task Tag Styles in Grid Cells */
+.tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.t-tag {
+  font-size: 10px;
+  background: rgba(5, 150, 105, 0.1);
+  color: #059669;
+  padding: 1px 4px;
+  border-radius: 4px;
+  border: 1px solid rgba(5, 150, 105, 0.2);
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.always-free .t-tag {
+  background: rgba(255, 255, 255, 0.4);
+  border-color: rgba(5, 150, 105, 0.3);
+}
+
+.equip-brief {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.b-tag {
+  font-size: 12px;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .t-tag {
+    font-size: 9px;
+    padding: 0px 2px;
+  }
+}

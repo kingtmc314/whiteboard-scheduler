@@ -127,6 +127,7 @@ export default function Home() {
                     
                     const isAlwaysFree = alwaysFreeCodes.has(room.code);
                     const bg = room.use ? purposeColors[room.use.p] || "#ef4444" : null;
+                    const info = equipment[room.code] || { wb: 0, pa: 0, socket: 0 };
                     
                     let cellClass = "cell ";
                     if (room.use) cellClass += "used";
@@ -143,12 +144,18 @@ export default function Home() {
                       >
                         <div className="rname">{room.name}</div>
                         <div className="rcode">{room.code}</div>
+                        
                         {room.use ? (
                           <div className="rinfo">{room.use.t}<br/>{room.use.p}</div>
                         ) : room.reserved ? (
                           <div className="rres">保留中 🔒</div>
                         ) : (
-                          <div className="rok">{isAlwaysFree ? "優先施工 ★" : "可施工 ✓"}</div>
+                          <div className="tasks">
+                            {info.wb === 1 && <span className="t-tag">📺 白板</span>}
+                            {info.pa === 1 && <span className="t-tag">🔊 音響</span>}
+                            {info.socket === 1 && <span className="t-tag">🔌 電制</span>}
+                            {!info.wb && !info.pa && !info.socket && <div className="rok">可施工 ✓</div>}
+                          </div>
                         )}
                       </div>
                     );
@@ -170,6 +177,21 @@ export default function Home() {
                 <div className="detail">
                   <h3>{sel.name} <small>({sel.code})</small></h3>
                   <p>{sel.floor}</p>
+                  
+                  {/* Equipment Detail in Side Panel */}
+                  <div className="equip-brief">
+                    {(() => {
+                      const info = equipment[sel.code] || { wb: 0, pa: 0, socket: 0 };
+                      return (
+                        <>
+                          {info.wb === 1 && <span className="b-tag">需要安裝電子白板</span>}
+                          {info.pa === 1 && <span className="b-tag">需要安裝音響 PA</span>}
+                          {info.socket === 1 && <span className="b-tag">需要加裝電位</span>}
+                        </>
+                      );
+                    })()}
+                  </div>
+
                   {sel.use ? (
                     <>
                       <p><b>使用人：</b>{sel.use.t}</p>
