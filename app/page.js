@@ -16,7 +16,6 @@ export default function Home() {
   const [completedTasks, setCompletedTasks] = useState({});
   const [showFreeModal, setShowFreeModal] = useState(false);
 
-  // Load progress from localStorage
   useEffect(() => {
     const saved = localStorage.getItem("construction-progress");
     if (saved) setCompletedTasks(JSON.parse(saved));
@@ -117,18 +116,17 @@ export default function Home() {
             <div className="stat s-any"><b>{alwaysFreeRooms.length}</b>全期隨時可施工</div>
           </div>
 
-          <div className="wrap">
-            <div className="planbox">
-              <div className="colhead">
-                <div className="flabel"></div>
-                {cols.map((c) => <div key={c} className="chead">{String(c).padStart(2, "0")}</div>)}
-              </div>
+          <div className="planbox">
+            <div className="grid-container">
+              <div className="flabel"></div>
+              {cols.map((c) => <div key={c} className="chead">{String(c).padStart(2, "0")}</div>)}
+              
               {floors.map((f) => (
-                <div key={f} className="frow">
-                  <div className="flabel">{f}</div>
+                <>
+                  <div key={`${f}-label`} className="flabel">{f}</div>
                   {cols.map((c) => {
                     const room = processedRooms.find((r) => r.floor === f && r.col === c);
-                    if (!room) return <div key={c} className="cell empty" />;
+                    if (!room) return <div key={`${f}-${c}`} className="cell empty" />;
                     const isAlwaysFree = alwaysFreeCodes.has(room.code);
                     const info = equipment[room.code] || { wb: 0, pa: 0, socket: 0 };
                     
@@ -141,7 +139,7 @@ export default function Home() {
 
                     return (
                       <div
-                        key={c}
+                        key={room.code}
                         className={cellClass}
                         style={room.use ? { background: purposeColors[room.use.p] || "#ef4444" } : {}}
                         onClick={() => setSel({ ...room, isAlwaysFree, info })}
@@ -166,68 +164,68 @@ export default function Home() {
                       </div>
                     );
                   })}
-                </div>
+                </>
               ))}
-              <div className="legend">
-                <span className="lg lg-free">空置 / 可施工</span>
-                <span className="lg lg-priority">★ 優先 / 全期空置</span>
-                <span className="lg lg-reserved">🔒 保留 (不可施工)</span>
-                <span className="lg lg-done">✓ 已完成 / 開放中</span>
-                {Object.entries(purposeColors).map(([p, c]) => <span key={p} className="lg" style={{ background: c, color: 'white' }}>{p}</span>)}
-              </div>
             </div>
-
-            {sel && (
-              <aside className="side">
-                <div className="detail">
-                  <button className="close-btn" onClick={() => setSel(null)}>✕</button>
-                  <h3>{sel.name} <small>({sel.code})</small></h3>
-                  <p>{sel.floor}</p>
-                  <div className="progress-tracker">
-                    <h4>工程進度紀錄：</h4>
-                    {sel.info.wb === 1 && (
-                      <label className="p-item">
-                        <input type="checkbox" checked={sel.progress.wb} onChange={() => toggleTask(sel.code, 'wb')} />
-                        📺 電子白板
-                      </label>
-                    )}
-                    {sel.info.pa === 1 && (
-                      <label className="p-item">
-                        <input type="checkbox" checked={sel.progress.pa} onChange={() => toggleTask(sel.code, 'pa')} />
-                        🔊 音響 PA
-                      </label>
-                    )}
-                    {sel.info.socket === 1 && (
-                      <label className="p-item">
-                        <input type="checkbox" checked={sel.progress.socket} onChange={() => toggleTask(sel.code, 'socket')} />
-                        🔌 電制插座
-                      </label>
-                    )}
-                    {!sel.info.wb && !sel.info.pa && !sel.info.socket && <p>此房間無須安裝項目</p>}
-                  </div>
-                  {sel.use ? (
-                    <div className="msg-box error">
-                      <p><b>使用人：</b>{sel.use.t}</p>
-                      <p><b>性質：</b>{sel.use.p}</p>
-                      <p className="warn">⚠ 此日已被佔用，請勿施工</p>
-                    </div>
-                  ) : sel.reserved ? (
-                    <div className="msg-box error">
-                      <p className="warn">⚠ 此課室/樓層於此段時間已被保留，請勿施工</p>
-                    </div>
-                  ) : sel.allDone ? (
-                    <div className="msg-box success">
-                      <p className="okmsg">✓ 工程已全部完成，現已開放</p>
-                    </div>
-                  ) : (
-                    <div className="msg-box success">
-                      <p className="okmsg">{sel.isAlwaysFree ? "★ 全期空置，建議優先施工" : "✓ 此日空置，可安排施工"}</p>
-                    </div>
-                  )}
-                </div>
-              </aside>
-            )}
+            <div className="legend">
+              <span className="lg lg-free">空置 / 可施工</span>
+              <span className="lg lg-priority">★ 優先 / 全期空置</span>
+              <span className="lg lg-reserved">🔒 保留 (不可施工)</span>
+              <span className="lg lg-done">✓ 已完成 / 開放中</span>
+              {Object.entries(purposeColors).map(([p, c]) => <span key={p} className="lg" style={{ background: c, color: 'white' }}>{p}</span>)}
+            </div>
           </div>
+
+          {sel && (
+            <aside className="side">
+              <div className="detail">
+                <button className="close-btn" onClick={() => setSel(null)}>✕</button>
+                <h3>{sel.name} <small>({sel.code})</small></h3>
+                <p>{sel.floor}</p>
+                <div className="progress-tracker">
+                  <h4>工程進度紀錄：</h4>
+                  {sel.info.wb === 1 && (
+                    <label className="p-item">
+                      <input type="checkbox" checked={sel.progress.wb} onChange={() => toggleTask(sel.code, 'wb')} />
+                      📺 電子白板
+                    </label>
+                  )}
+                  {sel.info.pa === 1 && (
+                    <label className="p-item">
+                      <input type="checkbox" checked={sel.progress.pa} onChange={() => toggleTask(sel.code, 'pa')} />
+                      🔊 音響 PA
+                    </label>
+                  )}
+                  {sel.info.socket === 1 && (
+                    <label className="p-item">
+                      <input type="checkbox" checked={sel.progress.socket} onChange={() => toggleTask(sel.code, 'socket')} />
+                      🔌 電制插座
+                    </label>
+                  )}
+                  {!sel.info.wb && !sel.info.pa && !sel.info.socket && <p>此房間無須安裝項目</p>}
+                </div>
+                {sel.use ? (
+                  <div className="msg-box error">
+                    <p><b>使用人：</b>{sel.use.t}</p>
+                    <p><b>性質：</b>{sel.use.p}</p>
+                    <p className="warn">⚠ 此日已被佔用，請勿施工</p>
+                  </div>
+                ) : sel.reserved ? (
+                  <div className="msg-box error">
+                    <p className="warn">⚠ 此課室/樓層於此段時間已被保留，請勿施工</p>
+                  </div>
+                ) : sel.allDone ? (
+                  <div className="msg-box success">
+                    <p className="okmsg">✓ 工程已全部完成，現已開放</p>
+                  </div>
+                ) : (
+                  <div className="msg-box success">
+                    <p className="okmsg">{sel.isAlwaysFree ? "★ 全期空置，建議優先施工" : "✓ 此日空置，可安排施工"}</p>
+                  </div>
+                )}
+              </div>
+            </aside>
+          )}
 
           {showFreeModal && (
             <div className="modal-overlay" onClick={() => setShowFreeModal(false)}>
