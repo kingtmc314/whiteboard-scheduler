@@ -154,10 +154,10 @@ export default function Home() {
                         ) : room.reserved ? (
                           <div className="rres">保留中 🔒</div>
                         ) : (
-                          <div className="tasks">
-                            {info.wb === 1 && <span className="t-tag">📺 白板</span>}
-                            {info.pa === 1 && <span className="t-tag">🔊 音響</span>}
-                            {info.socket === 1 && <span className="t-tag">🔌 電制</span>}
+                          <div className="tasks icon-only">
+                            {info.wb === 1 && <span className="t-tag" title="電子白板">📺</span>}
+                            {info.pa === 1 && <span className="t-tag" title="音響 PA">🔊</span>}
+                            {info.socket === 1 && <span className="t-tag" title="電制插座">🔌</span>}
                             {!info.wb && !info.pa && !info.socket && <div className="rok">可施工 ✓</div>}
                           </div>
                         )}
