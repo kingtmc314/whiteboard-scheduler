@@ -319,46 +319,55 @@ export default function Home() {
           <div className="equip-header">
             <h2>總表 (合併資訊)</h2>
             <div className="filter-row">
-              <select value={dateKey} onChange={(e) => setDateKey(e.target.value)}>
-                {dateList.map(d => <option key={d} value={d}>{occupancy[d].label}</option>)}
-              </select>
-              <select value={selectedFloor} onChange={(e) => setSelectedFloor(e.target.value)}>
-                <option value="All Floors">所有樓層</option>
-                {floors.map(f => <option key={f} value={f}>{f}</option>)}
-              </select>
+              <div className="date-dropdown">
+                <select value={dateKey} onChange={(e) => setDateKey(e.target.value)}>
+                  {dateList.map(d => (
+                    <option key={d} value={d}>{occupancy[d].label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="floor-filter">
+                <select value={selectedFloor} onChange={(e) => setSelectedFloor(e.target.value)}>
+                  <option value="All Floors">所有樓層</option>
+                  {floors.map(f => <option key={f} value={f}>{f}</option>)}
+                </select>
+              </div>
             </div>
           </div>
-          <div className="table-wrap">
-            <table className="sum-table">
+          <div className="table-container">
+            <table className="summary-table">
               <thead>
                 <tr>
-                  <th>樓層</th><th>房號</th><th>名稱</th><th>本日狀態</th><th>白板</th><th>音響</th><th>電制</th>
+                  <th>樓層</th>
+                  <th>房號</th>
+                  <th>名稱</th>
+                  <th>本日狀態</th>
+                  <th>白板</th>
+                  <th>音響</th>
+                  <th>電制</th>
+                  <th>備註</th>
                 </tr>
               </thead>
               <tbody>
-                {allRooms.filter(r => selectedFloor === "All Floors" || r.floor === selectedFloor).map(r => {
+                {processedRooms.filter(r => selectedFloor === "All Floors" || r.floor === selectedFloor).map(r => {
                   const info = equipment[r.code] || { wb: 0, pa: 0, socket: 0, remark: "" };
-                  const use = occ[r.code];
-                  const reserved = !use && isReserved(r.floor, r.code, dateKey);
-                  const progress = completedTasks[r.code] || { wb: false, pa: false, socket: false };
-                  const hasTasks = info.wb || info.pa || info.socket;
-                  const allDone = hasTasks && (!info.wb || progress.wb) && (!info.pa || progress.pa) && (!info.socket || progress.socket);
-                  
-                  let statusText = "可施工 ✓";
+                  let statusText = "可施工";
                   let statusClass = "s-free";
-                  if (use) { statusText = "佔用 ⚠"; statusClass = "s-used"; }
-                  else if (reserved) { statusText = "保留 🔒"; statusClass = "s-res"; }
-                  else if (allDone) { statusText = "已完成 ✓"; statusClass = "s-done"; }
+                  if (r.allDone) { statusText = "已完成"; statusClass = "s-done"; }
+                  else if (r.use) { statusText = `佔用 (${r.use.t})`; statusClass = "s-used"; }
+                  else if (r.reserved) { statusText = "保留中"; statusClass = "s-res"; }
+                  else if (alwaysFreeCodes.has(r.code)) { statusText = "優先施工 ★"; statusClass = "s-priority"; }
 
                   return (
                     <tr key={r.code}>
                       <td>{r.floor}</td>
                       <td>{r.code}</td>
                       <td>{r.name}</td>
-                      <td className={statusClass}>{statusText}</td>
+                      <td><span className={`status-pill ${statusClass}`}>{statusText}</span></td>
                       <td><span className={info.wb ? "status-tag need" : "status-tag none"}>{info.wb ? "需要" : "不需"}</span></td>
                       <td><span className={info.pa ? "status-tag need" : "status-tag none"}>{info.pa ? "需要" : "不需"}</span></td>
                       <td><span className={info.socket ? "status-tag need" : "status-tag none"}>{info.socket ? "需要" : "不需"}</span></td>
+                      <td className="s-remark">{info.remark}</td>
                     </tr>
                   );
                 })}
