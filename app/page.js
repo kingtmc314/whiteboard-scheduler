@@ -13,7 +13,8 @@ export default function Home() {
   const [dateKey, setDateKey] = useState(dateList[0]);
   const [sel, setSel] = useState(null);
   const [selectedFloor, setSelectedFloor] = useState("All Floors");
-  const [completedTasks, setCompletedTasks] = useState({}); // { roomCode: { wb: bool, pa: bool, socket: bool } }
+  const [completedTasks, setCompletedTasks] = useState({});
+  const [showFreeModal, setShowFreeModal] = useState(false);
 
   // Load progress from localStorage
   useEffect(() => {
@@ -21,7 +22,6 @@ export default function Home() {
     if (saved) setCompletedTasks(JSON.parse(saved));
   }, []);
 
-  // Save progress to localStorage
   const toggleTask = (roomCode, taskType) => {
     const updated = {
       ...completedTasks,
@@ -55,12 +55,7 @@ export default function Home() {
       const reserved = !use && isReserved(r.floor, r.code, dateKey);
       const progress = completedTasks[r.code] || { wb: false, pa: false, socket: false };
       const info = equipment[r.code] || { wb: 0, pa: 0, socket: 0 };
-      
-      // Check if all required tasks are completed
-      const allDone = (!info.wb || progress.wb) && 
-                      (!info.pa || progress.pa) && 
-                      (!info.socket || progress.socket);
-      
+      const allDone = (!info.wb || progress.wb) && (!info.pa || progress.pa) && (!info.socket || progress.socket);
       return { ...r, use, reserved, progress, allDone };
     });
   }, [dateKey, occ, completedTasks]);
@@ -99,14 +94,20 @@ export default function Home() {
 
       {activeTab === "schedule" && (
         <>
-          <p className="sub-hint">綠色 = 空置（可施工）　灰色 = 保留（不可施工）　彩色 = 已被使用（須避開）</p>
-          <div className="dates">
-            {dateList.map((d) => (
-              <button key={d} className={d === dateKey ? "date active" : "date"} onClick={() => { setDateKey(d); setSel(null); }}>
-                {occupancy[d].label}
-                <span>{Object.keys(occupancy[d].rooms).length + allRooms.filter(r => isReserved(r.floor, r.code, d) && !occupancy[d].rooms[r.code]).length} 間須避開</span>
-              </button>
-            ))}
+          <div className="schedule-header">
+            <div className="date-dropdown">
+              <label>選擇施工日期：</label>
+              <select value={dateKey} onChange={(e) => { setDateKey(e.target.value); setSel(null); }}>
+                {dateList.map(d => (
+                  <option key={d} value={d}>
+                    {occupancy[d].label} ({Object.keys(occupancy[d].rooms).length + allRooms.filter(r => isReserved(r.floor, r.code, d) && !occupancy[d].rooms[r.code]).length} 間須避開)
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button className="free-btn" onClick={() => setShowFreeModal(true)}>
+              本日可施工課室 ({freeRooms.length})
+            </button>
           </div>
 
           <div className="stats">
@@ -176,12 +177,12 @@ export default function Home() {
               </div>
             </div>
 
-            <aside className="side">
-              {sel && (
+            {sel && (
+              <aside className="side">
                 <div className="detail">
+                  <button className="close-btn" onClick={() => setSel(null)}>✕</button>
                   <h3>{sel.name} <small>({sel.code})</small></h3>
                   <p>{sel.floor}</p>
-                  
                   <div className="progress-tracker">
                     <h4>工程進度紀錄：</h4>
                     {sel.info.wb === 1 && (
@@ -204,7 +205,6 @@ export default function Home() {
                     )}
                     {!sel.info.wb && !sel.info.pa && !sel.info.socket && <p>此房間無須安裝項目</p>}
                   </div>
-
                   {sel.use ? (
                     <div className="msg-box error">
                       <p><b>使用人：</b>{sel.use.t}</p>
@@ -225,19 +225,32 @@ export default function Home() {
                     </div>
                   )}
                 </div>
-              )}
-              <h3>本日可施工課室（{freeRooms.length}）</h3>
-              <ul className="list free-list">
-                {freeRooms.map((r) => (
-                  <li key={r.code}>
-                    {r.floor}｜{r.name}
-                    {alwaysFreeCodes.has(r.code) && <b style={{color:'#059669', marginLeft:'4px'}}>★</b>}
-                    <span>{r.code}</span>
-                  </li>
-                ))}
-              </ul>
-            </aside>
+              </aside>
+            )}
           </div>
+
+          {showFreeModal && (
+            <div className="modal-overlay" onClick={() => setShowFreeModal(false)}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h3>本日可施工課室（{freeRooms.length}）</h3>
+                  <button className="close-btn" onClick={() => setShowFreeModal(false)}>✕</button>
+                </div>
+                <div className="modal-body">
+                  <ul className="modal-list">
+                    {freeRooms.map((r) => (
+                      <li key={r.code}>
+                        <span className="m-floor">{r.floor}</span>
+                        <span className="m-name">{r.name}</span>
+                        {alwaysFreeCodes.has(r.code) && <b className="m-star">★</b>}
+                        <span className="m-code">{r.code}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
 
