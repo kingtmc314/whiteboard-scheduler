@@ -18,7 +18,7 @@ body {
   background: var(--bg);
   color: var(--primary);
   font-family: 'Inter', -apple-system, sans-serif;
-  overflow: hidden; /* Prevent body scroll to enforce single page */
+  overflow: hidden;
 }
 
 main {
@@ -40,7 +40,7 @@ main {
 }
 
 h1 {
-  font-size: 1.1rem;
+  font-size: 1.2rem; /* Increased from 1.1rem */
   font-weight: 800;
   margin: 0;
 }
@@ -54,7 +54,7 @@ h1 {
   padding: 4px 12px;
   border-radius: 6px;
   font-weight: 600;
-  font-size: 0.75rem;
+  font-size: 0.85rem; /* Increased from 0.75rem */
   background: white;
   border: 1px solid #e2e8f0;
 }
@@ -87,7 +87,7 @@ h1 {
   padding: 4px 8px;
   border-radius: 6px;
   border: 1px solid #e2e8f0;
-  font-size: 0.8rem;
+  font-size: 0.9rem; /* Increased from 0.8rem */
   font-weight: 600;
   min-width: 240px;
 }
@@ -95,15 +95,15 @@ h1 {
 .stats-row {
   display: flex;
   gap: 12px;
-  font-size: 0.75rem;
+  font-size: 0.85rem; /* Increased from 0.75rem */
   font-weight: 600;
 }
 
 .stats-row span b { margin-right: 2px; }
 .c-used { color: var(--used); }
 .c-free { color: var(--free); }
-.c-res { color: var(--reserved); }
 .c-any { color: var(--priority); }
+.c-res { color: var(--reserved); }
 
 .free-btn {
   background: var(--accent);
@@ -111,7 +111,7 @@ h1 {
   padding: 4px 12px;
   border-radius: 6px;
   font-weight: 700;
-  font-size: 0.75rem;
+  font-size: 0.85rem; /* Increased from 0.75rem */
 }
 
 /* Grid Container */
@@ -139,7 +139,7 @@ h1 {
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 0.7rem;
+  font-size: 0.8rem; /* Increased from 0.7rem */
   color: #64748b;
   background: #f8fafc;
   border-radius: 4px;
@@ -150,7 +150,7 @@ h1 {
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 0.7rem;
+  font-size: 0.8rem; /* Increased from 0.7rem */
   color: #94a3b8;
 }
 
@@ -176,30 +176,30 @@ h1 {
 .done { background: #eef2ff; border-color: var(--done); }
 
 .rname {
-  font-size: 0.6rem;
+  font-size: 0.7rem; /* Increased from 0.6rem */
   font-weight: 800;
   text-align: center;
   line-height: 1;
 }
 
-.rcode { font-size: 0.5rem; opacity: 0.8; }
-.rinfo { font-size: 0.5rem; text-align: center; font-weight: 600; line-height: 1; margin-top: 1px; }
-.rres { font-size: 0.5rem; font-weight: 600; }
-.rdone { font-size: 0.5rem; color: var(--done); font-weight: 800; }
-.rok { font-size: 0.5rem; color: var(--priority); font-weight: 700; }
+.rcode { font-size: 0.6rem; opacity: 0.8; } /* Increased from 0.5rem */
+.rinfo { font-size: 0.6rem; text-align: center; font-weight: 600; line-height: 1; margin-top: 1px; } /* Increased from 0.5rem */
+.rres { font-size: 0.6rem; font-weight: 600; } /* Increased from 0.5rem */
+.rdone { font-size: 0.6rem; color: var(--done); font-weight: 800; } /* Increased from 0.5rem */
+.rok { font-size: 0.6rem; color: var(--priority); font-weight: 700; } /* Increased from 0.5rem */
 
 .p-star {
   position: absolute;
   top: 0px;
   right: 1px;
   color: var(--priority);
-  font-size: 0.6rem;
+  font-size: 0.7rem; /* Increased from 0.6rem */
   font-weight: 900;
 }
 
 /* Task Icons */
 .tasks.icon-only { display: flex; gap: 1px; }
-.t-tag { font-size: 0.75rem; }
+.t-tag { font-size: 0.85rem; } /* Increased from 0.75rem */
 .t-tag.done { opacity: 0.3; filter: grayscale(1); }
 
 /* Legend & Footer */
@@ -216,15 +216,15 @@ h1 {
   gap: 6px;
 }
 
-.lg { padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 600; }
+.lg { padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; } /* Increased from 0.6rem */
 .lg-free { background: #ecfdf5; color: #065f46; }
 .lg-priority { background: #d1fae5; color: #065f46; border: 1px solid var(--priority); }
 .lg-reserved { background: #f1f5f9; color: #475569; }
 .lg-done { background: #eef2ff; color: var(--done); border: 1px solid var(--done); }
 
-footer { color: #94a3b8; font-size: 0.65rem; }
+footer { color: #94a3b8; font-size: 0.75rem; } /* Increased from 0.65rem */
 
-/* Sidebar & Modal (Simplified for space) */
+/* Sidebar & Modal */
 .side { position: fixed; top: 0; right: 0; width: 300px; height: 100vh; background: white; z-index: 200; padding: 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.1); }
 .modal-content { max-width: 400px; }
 
