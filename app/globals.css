@@ -161,7 +161,7 @@ h1 {
 
 .cell:hover:not(.empty) { transform: translateY(-1px); box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.1); }
 .empty { background: #f8fafc; cursor: default; }
-.free { background: #ecfdf5; border-color: #d1fae5; }
+.free { background: #d1fae5; border-color: #10b981; }
 .always-free { background: #d1fae5; border-color: var(--priority); }
 .used { color: white; }
 .reserved { background: #f1f5f9; border-color: #e2e8f0; color: #94a3b8; }
