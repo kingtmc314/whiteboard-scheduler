@@ -1,6 +1,12 @@
 "use client";
 import { useMemo, useState, useEffect } from "react";
 import { layout, occupancy, dateList, purposeColors, equipment, manualReservations } from "../lib/data";
+import { createClient } from '@supabase/supabase-js';
+
+// Supabase Configuration
+const supabaseUrl = 'https://awvpavxgsikzmmrwspqp.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF3dnBhdnhnc2lrem1tcndzcHFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwODU5NjksImV4cCI6MjA5NDY2MTk2OX0.sdUtxrN0YYsyw5BKPjB-2A74vDB4g6fIBE79cIfF0qU';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const floors = ["7/F", "6/F", "5/F", "4/F", "3/F", "2/F", "1/F", "G/F"];
 const cols = Array.from({ length: 11 }, (_, i) => i + 1);
@@ -15,22 +21,40 @@ export default function Home() {
   const [selectedFloor, setSelectedFloor] = useState("All Floors");
   const [completedTasks, setCompletedTasks] = useState({});
   const [showFreeModal, setShowFreeModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch progress from Supabase
   useEffect(() => {
-    const saved = localStorage.getItem("construction-progress");
-    if (saved) setCompletedTasks(JSON.parse(saved));
+    async function fetchProgress() {
+      const { data, error } = await supabase.from('construction_progress').select('*');
+      if (data) {
+        const progressMap = {};
+        data.forEach(item => {
+          progressMap[item.room_code] = { wb: item.wb, pa: item.pa, socket: item.socket };
+        });
+        setCompletedTasks(progressMap);
+      }
+      setIsLoading(false);
+    }
+    fetchProgress();
   }, []);
 
-  const toggleTask = (roomCode, taskType) => {
-    const updated = {
-      ...completedTasks,
-      [roomCode]: {
-        ...(completedTasks[roomCode] || { wb: false, pa: false, socket: false }),
-        [taskType]: !completedTasks[roomCode]?.[taskType]
-      }
-    };
-    setCompletedTasks(updated);
-    localStorage.setItem("construction-progress", JSON.stringify(updated));
+  const toggleTask = async (roomCode, taskType) => {
+    const current = completedTasks[roomCode] || { wb: false, pa: false, socket: false };
+    const updatedTask = { ...current, [taskType]: !current[taskType] };
+    
+    const updatedProgress = { ...completedTasks, [roomCode]: updatedTask };
+    setCompletedTasks(updatedProgress);
+
+    const { error } = await supabase.from('construction_progress').upsert({
+      room_code: roomCode,
+      wb: updatedTask.wb,
+      pa: updatedTask.pa,
+      socket: updatedTask.socket,
+      updated_at: new Date().toISOString()
+    });
+    
+    if (error) console.error('Supabase Sync Error:', error);
   };
 
   const day = occupancy[dateKey];
@@ -189,19 +213,19 @@ export default function Home() {
                 <div className="progress-tracker">
                   {sel.info.wb === 1 && (
                     <label className="p-item">
-                      <input type="checkbox" checked={sel.progress.wb} onChange={() => toggleTask(sel.code, 'wb')} />
+                      <input type="checkbox" checked={completedTasks[sel.code]?.wb || false} onChange={() => toggleTask(sel.code, 'wb')} />
                       📺 電子白板
                     </label>
                   )}
                   {sel.info.pa === 1 && (
                     <label className="p-item">
-                      <input type="checkbox" checked={sel.progress.pa} onChange={() => toggleTask(sel.code, 'pa')} />
+                      <input type="checkbox" checked={completedTasks[sel.code]?.pa || false} onChange={() => toggleTask(sel.code, 'pa')} />
                       🔊 音響 PA
                     </label>
                   )}
                   {sel.info.socket === 1 && (
                     <label className="p-item">
-                      <input type="checkbox" checked={sel.progress.socket} onChange={() => toggleTask(sel.code, 'socket')} />
+                      <input type="checkbox" checked={completedTasks[sel.code]?.socket || false} onChange={() => toggleTask(sel.code, 'socket')} />
                       🔌 電制插座
                     </label>
                   )}
@@ -319,15 +343,19 @@ export default function Home() {
                   const progress = completedTasks[r.code] || { wb: false, pa: false, socket: false };
                   const hasTasks = info.wb || info.pa || info.socket;
                   const allDone = hasTasks && (!info.wb || progress.wb) && (!info.pa || progress.pa) && (!info.socket || progress.socket);
+                  
+                  let statusText = "可施工 ✓";
+                  let statusClass = "s-free";
+                  if (use) { statusText = "佔用 ⚠"; statusClass = "s-used"; }
+                  else if (reserved) { statusText = "保留 🔒"; statusClass = "s-res"; }
+                  else if (allDone) { statusText = "已完成 ✓"; statusClass = "s-done"; }
 
                   return (
                     <tr key={r.code}>
                       <td>{r.floor}</td>
                       <td>{r.code}</td>
                       <td>{r.name}</td>
-                      <td className={use ? "st-used" : reserved ? "st-res" : allDone ? "st-done" : "st-free"}>
-                        {use ? `佔用 (${use.t})` : reserved ? "保留中" : allDone ? "工程完成" : "可施工"}
-                      </td>
+                      <td className={statusClass}>{statusText}</td>
                       <td><span className={info.wb ? "status-tag need" : "status-tag none"}>{info.wb ? "需要" : "不需"}</span></td>
                       <td><span className={info.pa ? "status-tag need" : "status-tag none"}>{info.pa ? "需要" : "不需"}</span></td>
                       <td><span className={info.socket ? "status-tag need" : "status-tag none"}>{info.socket ? "需要" : "不需"}</span></td>
