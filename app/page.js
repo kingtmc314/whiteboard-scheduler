@@ -54,12 +54,16 @@ export default function Home() {
       const reserved = !use && isReserved(r.floor, r.code, dateKey);
       const progress = completedTasks[r.code] || { wb: false, pa: false, socket: false };
       const info = equipment[r.code] || { wb: 0, pa: 0, socket: 0 };
-      const allDone = (!info.wb || progress.wb) && (!info.pa || progress.pa) && (!info.socket || progress.socket);
-      return { ...r, use, reserved, progress, allDone };
+      
+      // Completion logic: Must have at least one task AND all required tasks must be checked
+      const hasTasks = info.wb || info.pa || info.socket;
+      const allDone = hasTasks && (!info.wb || progress.wb) && (!info.pa || progress.pa) && (!info.socket || progress.socket);
+      
+      return { ...r, use, reserved, progress, allDone, hasTasks };
     });
   }, [dateKey, occ, completedTasks]);
 
-  const freeRooms = processedRooms.filter((r) => !r.use && !r.reserved);
+  const freeRooms = processedRooms.filter((r) => !r.use && !r.reserved && !r.allDone);
   const occRooms = processedRooms.filter((r) => r.use);
   const reservedRooms = processedRooms.filter((r) => r.reserved);
 
@@ -312,7 +316,9 @@ export default function Home() {
                   const reserved = !use && isReserved(r.floor, r.code, dateKey);
                   const isAlwaysFree = alwaysFreeCodes.has(r.code);
                   const progress = completedTasks[r.code] || { wb: false, pa: false, socket: false };
-                  const allDone = (!info.wb || progress.wb) && (!info.pa || progress.pa) && (!info.socket || progress.socket);
+                  
+                  const hasTasks = info.wb || info.pa || info.socket;
+                  const allDone = hasTasks && (!info.wb || progress.wb) && (!info.pa || progress.pa) && (!info.socket || progress.socket);
                   
                   let statusText = allDone ? "完成" : "可施工";
                   let statusClass = allDone ? "s-done" : "s-free";
