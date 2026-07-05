@@ -82,38 +82,36 @@ export default function Home() {
 
   return (
     <main>
-      <header className="top">
-        <h1>電子白板施工避開日子｜2025-2026 中學</h1>
+      <header className="top-header">
+        <h1>電子白板施工避開日子｜2025-2026</h1>
         <div className="nav-tabs">
-          <button className={activeTab === "schedule" ? "tab active" : "tab"} onClick={() => setActiveTab("schedule")}>施工進度表</button>
-          <button className={activeTab === "equipment" ? "tab active" : "tab"} onClick={() => setActiveTab("equipment")}>課室設備清單</button>
-          <button className={activeTab === "summary" ? "tab active" : "tab"} onClick={() => setActiveTab("summary")}>總表 (合併資訊)</button>
+          <button className={activeTab === "schedule" ? "tab active" : "tab"} onClick={() => setActiveTab("schedule")}>施工進度</button>
+          <button className={activeTab === "equipment" ? "tab active" : "tab"} onClick={() => setActiveTab("equipment")}>設備清單</button>
+          <button className={activeTab === "summary" ? "tab active" : "tab"} onClick={() => setActiveTab("summary")}>總表</button>
         </div>
       </header>
 
       {activeTab === "schedule" && (
         <>
-          <div className="schedule-header">
+          <div className="control-bar">
             <div className="date-dropdown">
-              <label>選擇施工日期：</label>
               <select value={dateKey} onChange={(e) => { setDateKey(e.target.value); setSel(null); }}>
                 {dateList.map(d => (
                   <option key={d} value={d}>
-                    {occupancy[d].label} ({Object.keys(occupancy[d].rooms).length + allRooms.filter(r => isReserved(r.floor, r.code, d) && !occupancy[d].rooms[r.code]).length} 間須避開)
+                    {occupancy[d].label} ({Object.keys(occupancy[d].rooms).length + allRooms.filter(r => isReserved(r.floor, r.code, d) && !occupancy[d].rooms[r.code]).length} 須避開)
                   </option>
                 ))}
               </select>
             </div>
+            <div className="stats-row">
+              <span className="c-used"><b>{occRooms.length}</b>佔用</span>
+              <span className="c-res"><b>{reservedRooms.length}</b>保留</span>
+              <span className="c-free"><b>{freeRooms.length}</b>可施工</span>
+              <span className="c-any"><b>{alwaysFreeRooms.length}</b>優先</span>
+            </div>
             <button className="free-btn" onClick={() => setShowFreeModal(true)}>
-              本日可施工課室 ({freeRooms.length})
+              查看可施工 ({freeRooms.length})
             </button>
-          </div>
-
-          <div className="stats">
-            <div className="stat s-used"><b>{occRooms.length}</b>已被使用</div>
-            <div className="stat s-reserved"><b>{reservedRooms.length}</b>保留中</div>
-            <div className="stat s-free"><b>{freeRooms.length}</b>本日可施工</div>
-            <div className="stat s-any"><b>{alwaysFreeRooms.length}</b>全期隨時可施工</div>
           </div>
 
           <div className="planbox">
@@ -122,8 +120,8 @@ export default function Home() {
               {cols.map((c) => <div key={c} className="chead">{String(c).padStart(2, "0")}</div>)}
               
               {floors.map((f) => (
-                <>
-                  <div key={`${f}-label`} className="flabel">{f}</div>
+                <div key={f} style={{ display: 'contents' }}>
+                  <div className="flabel">{f}</div>
                   {cols.map((c) => {
                     const room = processedRooms.find((r) => r.floor === f && r.col === c);
                     if (!room) return <div key={`${f}-${c}`} className="cell empty" />;
@@ -147,43 +145,44 @@ export default function Home() {
                         <div className="rname">{room.name}</div>
                         <div className="rcode">{room.code}</div>
                         {room.use ? (
-                          <div className="rinfo">{room.use.t}<br/>{room.use.p}</div>
+                          <div className="rinfo">{room.use.t} | {room.use.p}</div>
                         ) : room.reserved ? (
-                          <div className="rres">保留中 🔒</div>
+                          <div className="rres">保留 🔒</div>
                         ) : room.allDone ? (
-                          <div className="rdone">開放中 ✓</div>
+                          <div className="rdone">完成 ✓</div>
                         ) : (
                           <div className="tasks icon-only">
-                            {info.wb === 1 && <span className={room.progress.wb ? "t-tag done" : "t-tag"} title="電子白板">📺</span>}
-                            {info.pa === 1 && <span className={room.progress.pa ? "t-tag done" : "t-tag"} title="音響 PA">🔊</span>}
-                            {info.socket === 1 && <span className={room.progress.socket ? "t-tag done" : "t-tag"} title="電制插座">🔌</span>}
-                            {!info.wb && !info.pa && !info.socket && <div className="rok">{isAlwaysFree ? "可施工 ★" : "可施工 ✓"}</div>}
+                            {info.wb === 1 && <span className={room.progress.wb ? "t-tag done" : "t-tag"} title="白板">📺</span>}
+                            {info.pa === 1 && <span className={room.progress.pa ? "t-tag done" : "t-tag"} title="音響">🔊</span>}
+                            {info.socket === 1 && <span className={room.progress.socket ? "t-tag done" : "t-tag"} title="電制">🔌</span>}
+                            {!info.wb && !info.pa && !info.socket && <div className="rok">{isAlwaysFree ? "★" : "✓"}</div>}
                           </div>
                         )}
                         {isAlwaysFree && !room.use && !room.reserved && !room.allDone && (info.wb || info.pa || info.socket) && <div className="p-star">★</div>}
                       </div>
                     );
                   })}
-                </>
+                </div>
               ))}
             </div>
+          </div>
+
+          <div className="bottom-info">
             <div className="legend">
-              <span className="lg lg-free">空置 / 可施工</span>
-              <span className="lg lg-priority">★ 優先 / 全期空置</span>
-              <span className="lg lg-reserved">🔒 保留 (不可施工)</span>
-              <span className="lg lg-done">✓ 已完成 / 開放中</span>
-              {Object.entries(purposeColors).map(([p, c]) => <span key={p} className="lg" style={{ background: c, color: 'white' }}>{p}</span>)}
+              <span className="lg lg-free">可施工</span>
+              <span className="lg lg-priority">★ 優先</span>
+              <span className="lg lg-reserved">🔒 保留</span>
+              <span className="lg lg-done">✓ 完成</span>
             </div>
+            <footer>房號 = S+樓層+欄號</footer>
           </div>
 
           {sel && (
             <aside className="side">
               <div className="detail">
                 <button className="close-btn" onClick={() => setSel(null)}>✕</button>
-                <h3>{sel.name} <small>({sel.code})</small></h3>
-                <p>{sel.floor}</p>
+                <h3>{sel.name} ({sel.code})</h3>
                 <div className="progress-tracker">
-                  <h4>工程進度紀錄：</h4>
                   {sel.info.wb === 1 && (
                     <label className="p-item">
                       <input type="checkbox" checked={sel.progress.wb} onChange={() => toggleTask(sel.code, 'wb')} />
@@ -202,26 +201,18 @@ export default function Home() {
                       🔌 電制插座
                     </label>
                   )}
-                  {!sel.info.wb && !sel.info.pa && !sel.info.socket && <p>此房間無須安裝項目</p>}
                 </div>
                 {sel.use ? (
                   <div className="msg-box error">
-                    <p><b>使用人：</b>{sel.use.t}</p>
-                    <p><b>性質：</b>{sel.use.p}</p>
-                    <p className="warn">⚠ 此日已被佔用，請勿施工</p>
+                    <p><b>使用人：</b>{sel.use.t} | {sel.use.p}</p>
+                    <p className="warn">⚠ 請勿施工</p>
                   </div>
                 ) : sel.reserved ? (
-                  <div className="msg-box error">
-                    <p className="warn">⚠ 此課室/樓層於此段時間已被保留，請勿施工</p>
-                  </div>
+                  <div className="msg-box error"><p className="warn">⚠ 已保留，請勿施工</p></div>
                 ) : sel.allDone ? (
-                  <div className="msg-box success">
-                    <p className="okmsg">✓ 工程已全部完成，現已開放</p>
-                  </div>
+                  <div className="msg-box success"><p className="okmsg">✓ 工程已完成</p></div>
                 ) : (
-                  <div className="msg-box success">
-                    <p className="okmsg">{sel.isAlwaysFree ? "★ 全期空置，建議優先施工" : "✓ 此日空置，可安排施工"}</p>
-                  </div>
+                  <div className="msg-box success"><p className="okmsg">{sel.isAlwaysFree ? "★ 優先施工" : "✓ 可施工"}</p></div>
                 )}
               </div>
             </aside>
@@ -231,7 +222,7 @@ export default function Home() {
             <div className="modal-overlay" onClick={() => setShowFreeModal(false)}>
               <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
-                  <h3>本日可施工課室（{freeRooms.length}）</h3>
+                  <h3>本日可施工（{freeRooms.length}）</h3>
                   <button className="close-btn" onClick={() => setShowFreeModal(false)}>✕</button>
                 </div>
                 <div className="modal-body">
@@ -241,7 +232,6 @@ export default function Home() {
                         <span className="m-floor">{r.floor}</span>
                         <span className="m-name">{r.name}</span>
                         {alwaysFreeCodes.has(r.code) && <b className="m-star">★</b>}
-                        <span className="m-code">{r.code}</span>
                       </li>
                     ))}
                   </ul>
@@ -255,11 +245,10 @@ export default function Home() {
       {activeTab === "equipment" && (
         <div className="equipment-view">
           <div className="equip-header">
-            <p className="sub-hint">1 = 需要安裝 / 0 = 不需要安裝</p>
             <div className="floor-filter">
-              <label>選擇樓層：</label>
+              <label>樓層：</label>
               <select value={selectedFloor} onChange={(e) => setSelectedFloor(e.target.value)}>
-                <option value="All Floors">所有樓層</option>
+                <option value="All Floors">所有</option>
                 {floors.map(f => <option key={f} value={f}>{f}</option>)}
               </select>
             </div>
@@ -279,21 +268,9 @@ export default function Home() {
                           <span className="c-name">{r.name}</span>
                         </div>
                         <div className="card-body">
-                          <div className={`item ${info.wb === 1 ? (progress.wb ? 'done' : 'need') : 'none'}`}>
-                            <span className="icon">📺</span>
-                            <span className="label">安裝電子白板</span>
-                            <span className="status">{info.wb === 1 ? (progress.wb ? '已完成' : '需要') : '不需'}</span>
-                          </div>
-                          <div className={`item ${info.pa === 1 ? (progress.pa ? 'done' : 'need') : 'none'}`}>
-                            <span className="icon">🔊</span>
-                            <span className="label">安裝課室PA</span>
-                            <span className="status">{info.pa === 1 ? (progress.pa ? '已完成' : '需要') : '不需'}</span>
-                          </div>
-                          <div className={`item ${info.socket === 1 ? (progress.socket ? 'done' : 'need') : 'none'}`}>
-                            <span className="icon">🔌</span>
-                            <span className="label">加裝電位</span>
-                            <span className="status">{info.socket === 1 ? (progress.socket ? '已完成' : '需要') : '不需'}</span>
-                          </div>
+                          {info.wb === 1 && <div className={`item ${progress.wb ? 'done' : 'need'}`}>📺 白板</div>}
+                          {info.pa === 1 && <div className={`item ${progress.pa ? 'done' : 'need'}`}>🔊 音響</div>}
+                          {info.socket === 1 && <div className={`item ${progress.socket ? 'done' : 'need'}`}>🔌 電制</div>}
                           {info.remark && <div className="remark">註：{info.remark}</div>}
                         </div>
                       </div>
@@ -310,13 +287,11 @@ export default function Home() {
         <div className="summary-view">
           <div className="equip-header">
             <div className="date-select">
-              <label>選擇日期：</label>
               <select value={dateKey} onChange={(e) => setDateKey(e.target.value)}>
                 {dateList.map(d => <option key={d} value={d}>{occupancy[d].label}</option>)}
               </select>
             </div>
             <div className="floor-filter">
-              <label>選擇樓層：</label>
               <select value={selectedFloor} onChange={(e) => setSelectedFloor(e.target.value)}>
                 <option value="All Floors">所有樓層</option>
                 {floors.map(f => <option key={f} value={f}>{f}</option>)}
@@ -327,7 +302,7 @@ export default function Home() {
             <table className="sum-table">
               <thead>
                 <tr>
-                  <th>樓層</th><th>房號</th><th>名稱</th><th>本日狀態</th><th>電子白板</th><th>音響 PA</th><th>電制插座</th><th>備註</th>
+                  <th>樓層</th><th>房號</th><th>名稱</th><th>狀態</th><th>白板</th><th>音響</th><th>電制</th>
                 </tr>
               </thead>
               <tbody>
@@ -339,20 +314,19 @@ export default function Home() {
                   const progress = completedTasks[r.code] || { wb: false, pa: false, socket: false };
                   const allDone = (!info.wb || progress.wb) && (!info.pa || progress.pa) && (!info.socket || progress.socket);
                   
-                  let statusText = allDone ? "已完成 ✓" : "可施工 ✓";
+                  let statusText = allDone ? "完成" : "可施工";
                   let statusClass = allDone ? "s-done" : "s-free";
-                  if (use) { statusText = `${use.t} (${use.p})`; statusClass = "s-used"; }
-                  else if (reserved) { statusText = "保留中 🔒"; statusClass = "s-reserved"; }
-                  else if (isAlwaysFree) { statusText = "優先施工 ★"; statusClass = "s-priority"; }
+                  if (use) { statusText = use.t; statusClass = "s-used"; }
+                  else if (reserved) { statusText = "保留"; statusClass = "s-reserved"; }
+                  else if (isAlwaysFree) { statusText = "優先 ★"; statusClass = "s-priority"; }
 
                   return (
                     <tr key={r.code}>
                       <td>{r.floor}</td><td><b>{r.code}</b></td><td>{r.name}</td>
                       <td className={statusClass}>{statusText}</td>
-                      <td className={info.wb === 1 ? (progress.wb ? "t-done" : "t-need") : "t-none"}>{info.wb === 1 ? (progress.wb ? "已完成" : "需要") : "不需"}</td>
-                      <td className={info.pa === 1 ? (progress.pa ? "t-done" : "t-need") : "t-none"}>{info.pa === 1 ? (progress.pa ? "已完成" : "需要") : "不需"}</td>
-                      <td className={info.socket === 1 ? (progress.socket ? "t-done" : "t-need") : "t-none"}>{info.socket === 1 ? (progress.socket ? "已完成" : "需要") : "不需"}</td>
-                      <td className="t-remark">{info.remark}</td>
+                      <td>{info.wb === 1 ? (progress.wb ? "✓" : "需要") : "-"}</td>
+                      <td>{info.pa === 1 ? (progress.pa ? "✓" : "需要") : "-"}</td>
+                      <td>{info.socket === 1 ? (progress.socket ? "✓" : "需要") : "-"}</td>
                     </tr>
                   );
                 })}
@@ -361,7 +335,6 @@ export default function Home() {
           </div>
         </div>
       )}
-      <footer>資料來源：電子白版施工避開日子_2025-2026.xlsx｜房號 = S+樓層+課室圖欄號</footer>
     </main>
   );
 }
