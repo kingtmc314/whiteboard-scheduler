@@ -149,7 +149,10 @@ export default function Home() {
                         <div className="rname">{room.name}</div>
                         <div className="rcode">{room.code}</div>
                         {room.use ? (
-                          <div className="rinfo">{room.use.t} | {room.use.p}</div>
+                          <>
+                            <div className="rinfo">{room.use.t} | {room.use.p}</div>
+                            <div className="warn-label">須避開</div>
+                          </>
                         ) : room.reserved ? (
                           <div className="rres">保留 🔒</div>
                         ) : room.allDone ? (
