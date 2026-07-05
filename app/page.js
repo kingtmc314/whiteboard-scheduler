@@ -54,11 +54,8 @@ export default function Home() {
       const reserved = !use && isReserved(r.floor, r.code, dateKey);
       const progress = completedTasks[r.code] || { wb: false, pa: false, socket: false };
       const info = equipment[r.code] || { wb: 0, pa: 0, socket: 0 };
-      
-      // Completion logic: Must have at least one task AND all required tasks must be checked
       const hasTasks = info.wb || info.pa || info.socket;
       const allDone = hasTasks && (!info.wb || progress.wb) && (!info.pa || progress.pa) && (!info.socket || progress.socket);
-      
       return { ...r, use, reserved, progress, allDone, hasTasks };
     });
   }, [dateKey, occ, completedTasks]);
@@ -252,6 +249,7 @@ export default function Home() {
       {activeTab === "equipment" && (
         <div className="equipment-view">
           <div className="equip-header">
+            <h2>設備清單 (各房需求)</h2>
             <div className="floor-filter">
               <label>樓層：</label>
               <select value={selectedFloor} onChange={(e) => setSelectedFloor(e.target.value)}>
@@ -260,32 +258,34 @@ export default function Home() {
               </select>
             </div>
           </div>
-          <div className="equip-grid">
-            {floors.filter(f => selectedFloor === "All Floors" || f === selectedFloor).map(f => (
-              <div key={f} className="floor-section">
-                <h2>{f}</h2>
-                <div className="room-cards">
-                  {layout[f].map(r => {
-                    const info = equipment[r.code] || { wb: 0, pa: 0, socket: 0, remark: "" };
-                    const progress = completedTasks[r.code] || { wb: false, pa: false, socket: false };
-                    return (
-                      <div key={r.code} className="room-card">
-                        <div className="card-head">
-                          <span className="c-code">{r.code}</span>
-                          <span className="c-name">{r.name}</span>
-                        </div>
-                        <div className="card-body">
-                          {info.wb === 1 && <div className={`item ${progress.wb ? 'done' : 'need'}`}>📺 白板</div>}
-                          {info.pa === 1 && <div className={`item ${progress.pa ? 'done' : 'need'}`}>🔊 音響</div>}
-                          {info.socket === 1 && <div className={`item ${progress.socket ? 'done' : 'need'}`}>🔌 電制</div>}
-                          {info.remark && <div className="remark">註：{info.remark}</div>}
-                        </div>
-                      </div>
-                    );
-                  })}
+          <div className="room-cards">
+            {allRooms.filter(r => selectedFloor === "All Floors" || r.floor === selectedFloor).map(r => {
+              const info = equipment[r.code] || { wb: 0, pa: 0, socket: 0, remark: "" };
+              const progress = completedTasks[r.code] || { wb: false, pa: false, socket: false };
+              return (
+                <div key={r.code} className="room-card">
+                  <div className="card-head">
+                    <span className="c-code">{r.code}</span>
+                    <span className="c-name">{r.name}</span>
+                  </div>
+                  <div className="card-body">
+                    <div className="equip-item">
+                      <span>📺 電子白板</span>
+                      <span className={info.wb ? "status-tag need" : "status-tag none"}>{info.wb ? "需要" : "不需"}</span>
+                    </div>
+                    <div className="equip-item">
+                      <span>🔊 音響 PA</span>
+                      <span className={info.pa ? "status-tag need" : "status-tag none"}>{info.pa ? "需要" : "不需"}</span>
+                    </div>
+                    <div className="equip-item">
+                      <span>🔌 電制插座</span>
+                      <span className={info.socket ? "status-tag need" : "status-tag none"}>{info.socket ? "需要" : "不需"}</span>
+                    </div>
+                    {info.remark && <div className="remark">註：{info.remark}</div>}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -293,12 +293,11 @@ export default function Home() {
       {activeTab === "summary" && (
         <div className="summary-view">
           <div className="equip-header">
-            <div className="date-select">
+            <h2>總表 (合併資訊)</h2>
+            <div className="filter-row">
               <select value={dateKey} onChange={(e) => setDateKey(e.target.value)}>
                 {dateList.map(d => <option key={d} value={d}>{occupancy[d].label}</option>)}
               </select>
-            </div>
-            <div className="floor-filter">
               <select value={selectedFloor} onChange={(e) => setSelectedFloor(e.target.value)}>
                 <option value="All Floors">所有樓層</option>
                 {floors.map(f => <option key={f} value={f}>{f}</option>)}
@@ -309,7 +308,7 @@ export default function Home() {
             <table className="sum-table">
               <thead>
                 <tr>
-                  <th>樓層</th><th>房號</th><th>名稱</th><th>狀態</th><th>白板</th><th>音響</th><th>電制</th>
+                  <th>樓層</th><th>房號</th><th>名稱</th><th>本日狀態</th><th>白板</th><th>音響</th><th>電制</th>
                 </tr>
               </thead>
               <tbody>
@@ -317,25 +316,21 @@ export default function Home() {
                   const info = equipment[r.code] || { wb: 0, pa: 0, socket: 0, remark: "" };
                   const use = occ[r.code];
                   const reserved = !use && isReserved(r.floor, r.code, dateKey);
-                  const isAlwaysFree = alwaysFreeCodes.has(r.code);
                   const progress = completedTasks[r.code] || { wb: false, pa: false, socket: false };
-                  
                   const hasTasks = info.wb || info.pa || info.socket;
                   const allDone = hasTasks && (!info.wb || progress.wb) && (!info.pa || progress.pa) && (!info.socket || progress.socket);
-                  
-                  let statusText = allDone ? "完成" : "可施工";
-                  let statusClass = allDone ? "s-done" : "s-free";
-                  if (use) { statusText = use.t; statusClass = "s-used"; }
-                  else if (reserved) { statusText = "保留"; statusClass = "s-reserved"; }
-                  else if (isAlwaysFree) { statusText = "優先 ★"; statusClass = "s-priority"; }
 
                   return (
                     <tr key={r.code}>
-                      <td>{r.floor}</td><td><b>{r.code}</b></td><td>{r.name}</td>
-                      <td className={statusClass}>{statusText}</td>
-                      <td>{info.wb === 1 ? (progress.wb ? "✓" : "需要") : "-"}</td>
-                      <td>{info.pa === 1 ? (progress.pa ? "✓" : "需要") : "-"}</td>
-                      <td>{info.socket === 1 ? (progress.socket ? "✓" : "需要") : "-"}</td>
+                      <td>{r.floor}</td>
+                      <td>{r.code}</td>
+                      <td>{r.name}</td>
+                      <td className={use ? "st-used" : reserved ? "st-res" : allDone ? "st-done" : "st-free"}>
+                        {use ? `佔用 (${use.t})` : reserved ? "保留中" : allDone ? "工程完成" : "可施工"}
+                      </td>
+                      <td><span className={info.wb ? "status-tag need" : "status-tag none"}>{info.wb ? "需要" : "不需"}</span></td>
+                      <td><span className={info.pa ? "status-tag need" : "status-tag none"}>{info.pa ? "需要" : "不需"}</span></td>
+                      <td><span className={info.socket ? "status-tag need" : "status-tag none"}>{info.socket ? "需要" : "不需"}</span></td>
                     </tr>
                   );
                 })}
