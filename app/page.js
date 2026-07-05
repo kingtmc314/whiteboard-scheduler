@@ -22,11 +22,15 @@ export default function Home() {
     if (manualReservations[date]?.includes(code)) return true;
 
     // 2. 樓層全域保留 (Floor-wide Reservations)
-    const d = parseInt(date.split("-")[2]);
-    if (floor === "7/F" && d >= 20 && d <= 22) return true;
-    if (floor === "3/F" && d >= 20 && d <= 23) return true;
-    if (floor === "2/F" && d >= 20 && d <= 24) return true;
-    if (floor === "6/F" && d >= 20 && d <= 30) return true;
+    const [year, month, dayStr] = date.split("-").map(Number);
+    
+    // July rules
+    if (month === 7) {
+      if (floor === "7/F" && dayStr >= 20 && dayStr <= 22) return true;
+      if (floor === "3/F" && dayStr >= 20 && dayStr <= 23) return true;
+      if (floor === "2/F" && dayStr >= 20 && dayStr <= 24) return true;
+      if (floor === "6/F" && dayStr >= 20 && dayStr <= 30) return true;
+    }
     
     return false;
   };
@@ -178,7 +182,6 @@ export default function Home() {
                   <h3>{sel.name} <small>({sel.code})</small></h3>
                   <p>{sel.floor}</p>
                   
-                  {/* Equipment Detail in Side Panel */}
                   <div className="equip-brief">
                     {(() => {
                       const info = equipment[sel.code] || { wb: 0, pa: 0, socket: 0 };
